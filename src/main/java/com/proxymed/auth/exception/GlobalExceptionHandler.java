@@ -1,6 +1,7 @@
 package com.proxymed.auth.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorResponse(HttpStatus.FORBIDDEN.value(), "Acces refuse",
                         "Votre role ne permet pas d'acceder a cette ressource"));
+    }
+
+    @ExceptionHandler(CompteExistantException.class)
+    public ResponseEntity<ErrorResponse> handleCompteExistant(CompteExistantException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(HttpStatus.CONFLICT.value(), "Compte existant", ex.getMessage()));
+    }
+
+    @ExceptionHandler(CodeVerificationException.class)
+    public ResponseEntity<ErrorResponse> handleCodeVerification(CodeVerificationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Code de verification refuse", ex.getMessage()));
+    }
+
+    @ExceptionHandler(TropDeDemandesException.class)
+    public ResponseEntity<ErrorResponse> handleTropDeDemandes(TropDeDemandesException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getSecondesAAttendre()))
+                .body(new ErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), "Trop de demandes", ex.getMessage()));
+    }
+
+    @ExceptionHandler(EnvoiEmailException.class)
+    public ResponseEntity<ErrorResponse> handleEnvoiEmail(EnvoiEmailException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), "Envoi d'email impossible", ex.getMessage()));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
