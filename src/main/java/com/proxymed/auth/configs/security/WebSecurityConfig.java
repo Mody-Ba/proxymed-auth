@@ -22,7 +22,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Ne dit que deux choses : quelles routes sont publiques, et que tout le reste demande un badge.
+ * Ne dit que deux choses : quelles routes sont publiques (connexion, inscription et Swagger), et que tout le reste demande un badge.
  * Les droits par role se verifient dans les controllers, avec @PreAuthorize("hasRole('...')")
  * au-dessus de chaque methode (active par @EnableMethodSecurity), jamais ici.
  */
@@ -67,7 +67,11 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Rendu interne des erreurs par Spring (pas une adresse publique).
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/connexion").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/connexion",
+                                "/api/auth/inscription",
+                                "/api/auth/verification",
+                                "/api/auth/renvoyer-code").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",

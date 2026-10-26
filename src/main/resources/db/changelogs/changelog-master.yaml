@@ -2,3 +2,6 @@ databaseChangeLog:
   - include:
       file: db/changelogs/001-create-utilisateur-table.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelogs/002-create-inscription-en-attente-table.sql
+      relativeToChangelogFile: false
