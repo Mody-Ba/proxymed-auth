@@ -53,4 +53,29 @@ class SmtpEmailServiceTest {
         assertThatThrownBy(() -> emailService.envoyerCodeInscription("a@proxymed.test", "A", "123456", Duration.ofMinutes(10)))
                 .isInstanceOf(EnvoiEmailException.class);
     }
+
+    @Test
+    void envoyerMotDePasseTemporaire_emailEnFrancaisAvecIdentifiantEtMotDePasse() {
+        emailService.envoyerMotDePasseTemporaire("moussa.ba@proxymed.test", "Moussa Ba", "Kx7#pQ2wzR4m");
+
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(captor.capture());
+        SimpleMailMessage message = captor.getValue();
+        assertThat(message.getFrom()).isEqualTo("expediteur@proxymed.test");
+        assertThat(message.getTo()).containsExactly("moussa.ba@proxymed.test");
+        assertThat(message.getSubject()).contains("mot de passe temporaire");
+        assertThat(message.getText())
+                .contains("Bonjour Moussa Ba")
+                .contains("Identifiant : moussa.ba@proxymed.test")
+                .contains("Mot de passe temporaire : Kx7#pQ2wzR4m")
+                .contains("remplacez ce mot de passe temporaire");
+    }
+
+    @Test
+    void envoyerMotDePasseTemporaire_echecSmtp_leveEnvoiEmailException() {
+        doThrow(new MailSendException("connexion refusee")).when(mailSender).send(any(SimpleMailMessage.class));
+
+        assertThatThrownBy(() -> emailService.envoyerMotDePasseTemporaire("a@proxymed.test", "A", "Kx7#pQ2wzR4m"))
+                .isInstanceOf(EnvoiEmailException.class);
+    }
 }

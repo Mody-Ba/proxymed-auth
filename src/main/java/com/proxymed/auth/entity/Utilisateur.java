@@ -53,6 +53,13 @@ public class Utilisateur {
     @Column(nullable = false)
     private boolean actif;
 
+    /**
+     * true quand le mot de passe a ete genere par le serveur (compte cree ou reinitialise par un
+     * ADMIN) ; false des que l'utilisateur l'a change lui-meme.
+     */
+    @Column(name = "mot_de_passe_temporaire", nullable = false)
+    private boolean motDePasseTemporaire;
+
     @Column(name = "date_creation", nullable = false, updatable = false)
     private Instant dateCreation;
 }

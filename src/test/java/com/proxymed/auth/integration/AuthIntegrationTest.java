@@ -90,6 +90,7 @@ class AuthIntegrationTest {
                 .andExpect(jsonPath("$.utilisateurId", is(idActif.toString())))
                 .andExpect(jsonPath("$.email", is(EMAIL_ACTIF)))
                 .andExpect(jsonPath("$.role", is("MEDECIN_SENIOR")))
+                .andExpect(jsonPath("$.motDePasseTemporaire", is(false)))
                 .andReturn().getResponse().getContentAsString();
 
         String token = objectMapper.readTree(corps).get("accessToken").asString();
@@ -99,7 +100,7 @@ class AuthIntegrationTest {
         assertThat(badge.roles()).containsExactly("MEDECIN_SENIOR");
         assertThat(entete(token)).contains("\"alg\":\"HS256\"");
 
-        assertThat(corps).doesNotContain(MDP_ACTIF).doesNotContainIgnoringCase("motDePasse");
+        assertThat(corps).doesNotContain(MDP_ACTIF).doesNotContain("\"motDePasse\"");
         assertThat(output.getAll()).doesNotContain(MDP_ACTIF).doesNotContain(token);
     }
 
@@ -206,7 +207,7 @@ class AuthIntegrationTest {
                 .andExpect(jsonPath("$.dateCreation", notNullValue()))
                 .andReturn().getResponse().getContentAsString();
 
-        assertThat(corps).doesNotContainIgnoringCase("motDePasse").doesNotContain("$2a$");
+        assertThat(corps).doesNotContain("\"motDePasse\"").doesNotContain("$2a$");
     }
 
     @Test

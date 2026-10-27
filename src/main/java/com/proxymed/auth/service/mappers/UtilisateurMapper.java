@@ -18,6 +18,7 @@ public class UtilisateurMapper {
                 .nomComplet(entity.getNomComplet())
                 .role(entity.getRole())
                 .actif(entity.isActif())
+                .motDePasseTemporaire(entity.isMotDePasseTemporaire())
                 .dateCreation(entity.getDateCreation())
                 .build();
     }

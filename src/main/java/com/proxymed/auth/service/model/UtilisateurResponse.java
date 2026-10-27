@@ -13,6 +13,7 @@ public record UtilisateurResponse(
         String nomComplet,
         Role role,
         boolean actif,
+        boolean motDePasseTemporaire,
         Instant dateCreation
 ) {
 }

@@ -3,6 +3,7 @@ package com.proxymed.auth.controller;
 import com.proxymed.auth.configs.security.UtilisateurConnecte;
 import com.proxymed.auth.mappers.AuthMapper;
 import com.proxymed.auth.service.AuthService;
+import com.proxymed.auth.service.model.ChangementMotDePasseRequest;
 import com.proxymed.auth.service.model.ConnexionRequest;
 import com.proxymed.auth.service.model.ConnexionResponse;
 import com.proxymed.auth.service.model.UtilisateurResponse;
@@ -12,11 +13,13 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,7 +35,8 @@ public class AuthController {
     @SecurityRequirements
     @Operation(summary = "Se connecter avec email et mot de passe",
             description = "Renvoie un badge (accessToken) a envoyer ensuite dans l'en-tete "
-                    + "\"Authorization: Bearer ...\". 401 si les identifiants sont faux, 403 si le compte est inactif.")
+                    + "\"Authorization: Bearer ...\". 401 si les identifiants sont faux, 403 si le compte est inactif. "
+                    + "motDePasseTemporaire=true : le mot de passe doit etre change avec /api/auth/changer-mot-de-passe.")
     public ConnexionResponse connexion(@Valid @RequestBody ConnexionRequest request) {
         return authMapper.toResponse(authService.connexion(authMapper.toModel(request)));
     }
@@ -41,5 +45,16 @@ public class AuthController {
     @Operation(summary = "Compte connecte", description = "Renvoie le compte correspondant au badge envoye.")
     public UtilisateurResponse moi(@Parameter(hidden = true) @AuthenticationPrincipal UtilisateurConnecte utilisateur) {
         return authMapper.toResponse(authService.findById(utilisateur.id()));
+    }
+
+    @PostMapping("/changer-mot-de-passe")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Changer son mot de passe",
+            description = "Pour tout compte connecte, notamment pour remplacer un mot de passe temporaire. "
+                    + "400 si l'ancien mot de passe est faux ou si le nouveau est identique.")
+    public void changerMotDePasse(
+            @Valid @RequestBody ChangementMotDePasseRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UtilisateurConnecte utilisateur) {
+        authService.changerMotDePasse(utilisateur.id(), authMapper.toModel(request));
     }
 }

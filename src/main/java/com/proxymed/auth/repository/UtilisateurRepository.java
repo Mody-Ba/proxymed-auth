@@ -2,6 +2,8 @@ package com.proxymed.auth.repository;
 
 import com.proxymed.auth.entity.Utilisateur;
 import com.proxymed.auth.enums.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +18,6 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, UUID> 
     boolean existsByEmail(String email);
 
     boolean existsByRole(Role role);
+
+    Page<Utilisateur> findByRole(Role role, Pageable pageable);
 }

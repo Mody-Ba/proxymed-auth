@@ -4,9 +4,11 @@ import com.proxymed.auth.configs.JwtUtils;
 import com.proxymed.auth.entity.Utilisateur;
 import com.proxymed.auth.exception.CompteInactifException;
 import com.proxymed.auth.exception.IdentifiantsInvalidesException;
+import com.proxymed.auth.exception.RegleGestionException;
 import com.proxymed.auth.exception.ResourceNotFoundException;
 import com.proxymed.auth.repository.UtilisateurRepository;
 import com.proxymed.auth.service.mappers.UtilisateurMapper;
+import com.proxymed.auth.service.model.ChangementMotDePasseModel;
 import com.proxymed.auth.service.model.ConnexionModel;
 import com.proxymed.auth.service.model.IdentifiantsModel;
 import com.proxymed.auth.service.model.UtilisateurModel;
@@ -73,6 +75,26 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UtilisateurModel findById(UUID id) {
         return utilisateurMapper.toModel(getEntityById(id));
+    }
+
+    @Override
+    @Transactional
+    public void changerMotDePasse(UUID utilisateurId, ChangementMotDePasseModel changement) {
+        Utilisateur utilisateur = getEntityById(utilisateurId);
+        // Le badge reste valable jusqu'a son expiration : on reverifie l'etat du compte en base.
+        if (!utilisateur.isActif()) {
+            throw new CompteInactifException();
+        }
+        if (!passwordEncoder.matches(changement.ancienMotDePasse(), utilisateur.getMotDePasse())) {
+            log.info("Changement de mot de passe refuse : ancien mot de passe incorrect (compte {})", utilisateurId);
+            throw new RegleGestionException("L'ancien mot de passe est incorrect");
+        }
+        if (changement.nouveauMotDePasse().equals(changement.ancienMotDePasse())) {
+            throw new RegleGestionException("Le nouveau mot de passe doit etre different de l'ancien");
+        }
+        utilisateur.setMotDePasse(passwordEncoder.encode(changement.nouveauMotDePasse()));
+        utilisateur.setMotDePasseTemporaire(false);
+        log.info("Mot de passe change : compte {}", utilisateurId);
     }
 
     /** Point unique de normalisation : les emails sont stockes et recherches en minuscules. */

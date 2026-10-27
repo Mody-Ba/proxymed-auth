@@ -219,7 +219,7 @@ class InscriptionIntegrationTest {
                 .andExpect(jsonPath("$.actif", is(true)))
                 .andReturn().getResponse().getContentAsString();
 
-        assertThat(corps).doesNotContain(MDP).doesNotContainIgnoringCase("motDePasse");
+        assertThat(corps).doesNotContain(MDP).doesNotContain("\"motDePasse\"");
         assertThat(inscriptionRepository.count()).isZero();
         Utilisateur utilisateur = utilisateurRepository.findByEmail(EMAIL).orElseThrow();
         assertThat(utilisateur.getRole()).isEqualTo(Role.UTILISATEUR);
