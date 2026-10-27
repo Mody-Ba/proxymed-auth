@@ -12,6 +12,8 @@ public record ConnexionResponse(
         long expireDansSecondes,
         UUID utilisateurId,
         String email,
-        Role role
+        Role role,
+        /** true : le mot de passe a ete genere par un ADMIN et doit etre change (/api/auth/changer-mot-de-passe). */
+        boolean motDePasseTemporaire
 ) {
 }

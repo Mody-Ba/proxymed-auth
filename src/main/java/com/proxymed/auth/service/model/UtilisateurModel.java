@@ -17,6 +17,7 @@ public record UtilisateurModel(
         String nomComplet,
         Role role,
         boolean actif,
+        boolean motDePasseTemporaire,
         Instant dateCreation
 ) {
 }

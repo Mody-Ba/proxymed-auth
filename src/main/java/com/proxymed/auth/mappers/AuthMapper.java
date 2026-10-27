@@ -2,6 +2,8 @@ package com.proxymed.auth.mappers;
 
 import com.proxymed.auth.service.model.ConnexionModel;
 import com.proxymed.auth.service.model.ConnexionRequest;
+import com.proxymed.auth.service.model.ChangementMotDePasseModel;
+import com.proxymed.auth.service.model.ChangementMotDePasseRequest;
 import com.proxymed.auth.service.model.ConnexionResponse;
 import com.proxymed.auth.service.model.IdentifiantsModel;
 import com.proxymed.auth.service.model.UtilisateurModel;
@@ -24,6 +26,13 @@ public class AuthMapper {
                 .build();
     }
 
+    public ChangementMotDePasseModel toModel(ChangementMotDePasseRequest req) {
+        return ChangementMotDePasseModel.builder()
+                .ancienMotDePasse(req.ancienMotDePasse())
+                .nouveauMotDePasse(req.nouveauMotDePasse())
+                .build();
+    }
+
     public ConnexionResponse toResponse(ConnexionModel model) {
         return ConnexionResponse.builder()
                 .accessToken(model.accessToken())
@@ -32,6 +41,7 @@ public class AuthMapper {
                 .utilisateurId(model.utilisateur().id())
                 .email(model.utilisateur().email())
                 .role(model.utilisateur().role())
+                .motDePasseTemporaire(model.utilisateur().motDePasseTemporaire())
                 .build();
     }
 
@@ -42,6 +52,7 @@ public class AuthMapper {
                 .nomComplet(model.nomComplet())
                 .role(model.role())
                 .actif(model.actif())
+                .motDePasseTemporaire(model.motDePasseTemporaire())
                 .dateCreation(model.dateCreation())
                 .build();
     }

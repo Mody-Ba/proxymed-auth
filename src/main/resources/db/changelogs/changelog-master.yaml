@@ -5,3 +5,6 @@ databaseChangeLog:
   - include:
       file: db/changelogs/002-create-inscription-en-attente-table.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelogs/003-add-mot-de-passe-temporaire-utilisateur.sql
+      relativeToChangelogFile: false

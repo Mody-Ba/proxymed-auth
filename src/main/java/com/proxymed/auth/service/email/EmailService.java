@@ -14,4 +14,11 @@ public interface EmailService {
      * @throws com.proxymed.auth.exception.EnvoiEmailException si l'envoi echoue
      */
     void envoyerCodeInscription(String destinataire, String nomComplet, String code, Duration validite);
+
+    /**
+     * Envoie le mot de passe temporaire d'un compte cree ou reinitialise par un ADMIN.
+     *
+     * @throws com.proxymed.auth.exception.EnvoiEmailException si l'envoi echoue
+     */
+    void envoyerMotDePasseTemporaire(String destinataire, String nomComplet, String motDePasseTemporaire);
 }

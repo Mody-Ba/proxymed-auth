@@ -11,7 +11,11 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.InvalidFormatException;
 import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 import java.util.List;
@@ -47,6 +51,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorResponse(HttpStatus.FORBIDDEN.value(), "Acces refuse",
                         "Votre role ne permet pas d'acceder a cette ressource"));
+    }
+
+    @ExceptionHandler(RegleGestionException.class)
+    public ResponseEntity<ErrorResponse> handleRegleGestion(RegleGestionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Regle de gestion non respectee", ex.getMessage()));
     }
 
     @ExceptionHandler(CompteExistantException.class)
@@ -98,11 +108,37 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex) {
-        String message = ex.getMostSpecificCause() instanceof UnrecognizedPropertyException upe
-                ? "Champ inconnu dans la requete : " + upe.getPropertyName()
-                : "Le corps de la requete est illisible ou mal forme";
+        Throwable cause = ex.getMostSpecificCause();
+        String message;
+        if (cause instanceof UnrecognizedPropertyException upe) {
+            message = "Champ inconnu dans la requete : " + upe.getPropertyName();
+        } else if (cause instanceof InvalidFormatException ife) {
+            // Ex. role "PATIENT" : on nomme le champ, sans renvoyer la valeur recue.
+            message = "Valeur invalide pour le champ " + nomDuChamp(ife);
+        } else {
+            message = "Le corps de la requete est illisible ou mal forme";
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Requete invalide", message));
+    }
+
+    /** Parametre d'URL ou de chemin du mauvais type : role inconnu, id qui n'est pas un UUID... */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Requete invalide",
+                        "Valeur invalide pour le parametre " + ex.getName()));
+    }
+
+    /** Contraintes sur les parametres d'URL (@Min, @Max sur page et taille...). */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleMethodValidation(HandlerMethodValidationException ex) {
+        List<String> details = ex.getParameterValidationResults().stream()
+                .flatMap(resultat -> resultat.getResolvableErrors().stream()
+                        .map(erreur -> resultat.getMethodParameter().getParameterName() + " : " + erreur.getDefaultMessage()))
+                .toList();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Validation echouee", "Un ou plusieurs parametres sont invalides", details));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -128,5 +164,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Erreur interne",
                         "Une erreur inattendue est survenue"));
+    }
+
+    private static String nomDuChamp(DatabindException ex) {
+        return ex.getPath().isEmpty() ? "inconnu" : ex.getPath().get(ex.getPath().size() - 1).getPropertyName();
     }
 }
