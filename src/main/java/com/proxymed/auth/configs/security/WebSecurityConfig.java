@@ -2,6 +2,7 @@ package com.proxymed.auth.configs.security;
 
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,12 +20,15 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Ne dit que deux choses : quelles routes sont publiques (connexion, inscription et Swagger), et que tout le reste demande un badge.
  * Les droits par role se verifient dans les controllers, avec @PreAuthorize("hasRole('...')")
  * au-dessus de chaque methode (active par @EnableMethodSecurity), jamais ici.
+ * Le CORS passe avant l'authentification : une pre-verification OPTIONS du navigateur
+ * (sans badge) recoit sa reponse CORS sans jamais atteindre le 401.
  */
 @Configuration
 @EnableWebSecurity
@@ -53,10 +57,11 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
@@ -83,13 +88,25 @@ public class WebSecurityConfig {
         return http.build();
     }
 
+    /**
+     * Origines autorisees : proxymed.cors.origines (PROXYMED_CORS_ORIGINS, separees par des virgules).
+     * Pas de cookies : le badge voyage dans l'en-tete Authorization. "*" est refuse au demarrage.
+     */
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource(@Value("${proxymed.cors.origines}") String origines) {
+        List<String> originesAutorisees = Arrays.stream(origines.split(","))
+                .map(String::trim)
+                .filter(origine -> !origine.isEmpty())
+                .toList();
+        if (originesAutorisees.isEmpty() || originesAutorisees.contains(CorsConfiguration.ALL)) {
+            throw new IllegalStateException("PROXYMED_CORS_ORIGINS doit lister des origines explicites (jamais \"*\")");
+        }
+
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:4200"));
+        config.setAllowedOrigins(originesAutorisees);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
