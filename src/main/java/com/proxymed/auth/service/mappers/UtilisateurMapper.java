@@ -1,6 +1,7 @@
 package com.proxymed.auth.service.mappers;
 
 import com.proxymed.auth.entity.Utilisateur;
+import com.proxymed.auth.service.model.MedecinJuniorModel;
 import com.proxymed.auth.service.model.UtilisateurModel;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,14 @@ public class UtilisateurMapper {
                 .actif(entity.isActif())
                 .motDePasseTemporaire(entity.isMotDePasseTemporaire())
                 .dateCreation(entity.getDateCreation())
+                .build();
+    }
+
+    /** Uniquement id et nom : rien d'autre ne doit sortir vers un MEDECIN_SENIOR. */
+    public MedecinJuniorModel toMedecinJuniorModel(Utilisateur entity) {
+        return MedecinJuniorModel.builder()
+                .id(entity.getId())
+                .nomComplet(entity.getNomComplet())
                 .build();
     }
 }
